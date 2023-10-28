@@ -1,16 +1,28 @@
 import { Client } from "discord.js";
-import ready from "./listeners/ready";
-
-const token = "Token";
-
-console.log("Bot Starting");
+import { config } from "./config";
+import { commands } from "./commands";
+import { deployCommands } from "./deploy-commands";
 
 const client = new Client({
-    intents: []
+  intents: ["Guilds", "GuildMessages", "DirectMessages"],
 });
 
-ready(client);
+client.on("ready", async () => {
+    if (!client.user || !client.application) {
+        return;
+    }
+    await deployCommands();
+    console.log(`${client.user.username} is online`);
+});
 
-client.login(token);
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isCommand()) {
+    return;
+  }
+  const { commandName } = interaction;
+  if (commands[commandName as keyof typeof commands]) {
+    commands[commandName as keyof typeof commands].execute(interaction);
+  }
+});
 
-//console.log(client);
+client.login(config.DISCORD_TOKEN);
